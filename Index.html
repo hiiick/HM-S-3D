@@ -877,42 +877,188 @@ function stepAcess(id,delta){var arr=STATE.acessorios.map(function(a){return a.i
 
 // VENDA
 function openNewVenda(){
-  var filOpts=STATE.filamentos.map(function(f){return'<option value="'+f.id+'">'+esc(f.nome)+' · '+fmt(f.estoque_kg)+' kg</option>';}).join("");
-  var h='<div class="modal-header"><span style="font-weight:700;font-size:18px;">Registrar Venda</span><button class="modal-close" onclick="forceClose()">✕</button></div><div class="modal-body">';
+  var filOpts=STATE.filamentos.map(function(f){return'<option value="'+f.id+'">'+esc(f.nome)+' \u00b7 '+fmt(f.estoque_kg)+' kg</option>';}).join("");
+  var h='<div class="modal-header"><span style="font-weight:700;font-size:18px;">Registrar Venda</span><button class="modal-close" onclick="forceClose()">\u2715</button></div><div class="modal-body">';
   h+='<div style="margin-bottom:12px;"><div class="input-label">Data</div><input class="ios-input" id="vd-data" type="date" value="'+today()+'"/></div>';
-  h+='<div class="grid-2" style="margin-bottom:12px;"><div><div class="input-label">Comprador</div><input class="ios-input" id="vd-comp" placeholder="Ex: Maria"/></div>';
-  h+='<div><div class="input-label">Qtd. itens</div><input class="ios-input" id="vd-qtd" type="number" min="1" value="1"/></div></div>';
-  h+='<div style="margin-bottom:12px;"><div class="input-label">Filamento <span style="font-size:11px;color:#AEAEB2;">opcional</span></div>';
-  h+='<select class="ios-input" id="vd-fil" onchange="toggleVBaixar()"><option value="">— sem vínculo —</option>'+filOpts+'</select></div>';
+  h+='<div class="grid-2" style="margin-bottom:12px;">';
+  h+='<div><div class="input-label">Comprador</div><input class="ios-input" id="vd-comp" placeholder="Ex: Maria" inputmode="text"/></div>';
+  h+='<div><div class="input-label">Qtd. itens</div><input class="ios-input" id="vd-qtd" type="number" min="1" value="1" inputmode="numeric"/></div></div>';
+
+  h+='<div style="margin-bottom:12px;"><div class="input-label">Descri\u00e7\u00e3o do produto</div><input class="ios-input" id="vd-desc" placeholder="Ex: Chaveiro gatinho" inputmode="text"/></div>';
+
+  // Filamento vinculado
+  h+='<div style="margin-bottom:12px;"><div class="input-label">Filamento do estoque <span style="font-size:11px;color:#AEAEB2;">opcional</span></div>';
+  h+='<select class="ios-input" id="vd-fil" onchange="toggleVBaixar()">';
+  h+='<option value="">\u2014 sem v\u00ednculo (filamento avulso abaixo) \u2014</option>'+filOpts+'</select></div>';
   h+='<div id="vd-baixar-row" style="display:none;background:#F2F2F7;border-radius:10px;padding:12px 14px;margin-bottom:12px;">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:15px;">Baixar estoque ao salvar</span>';
   h+='<div class="toggle" id="tg-baixar" style="background:#34C759;" onclick="toggleBaixar()"><div class="toggle-knob" style="left:22px;"></div></div></div></div>';
-  h+='<div style="margin-bottom:12px;"><div class="input-label">Descrição</div><input class="ios-input" id="vd-desc" placeholder="Ex: Chaveiro gatinho"/></div>';
-  h+='<div class="grid-2" style="margin-bottom:12px;"><div><div class="input-label">Peso (g)</div><input class="ios-input" id="vd-peso" type="number" placeholder="120"/></div>';
-  h+='<div><div class="input-label">Tempo (h)</div><input class="ios-input" id="vd-tempo" type="number" step="0.1" placeholder="3.5"/></div></div>';
-  h+='<div class="grid-2" style="margin-bottom:12px;"><div><div class="input-label">Preço de venda (R$)</div><input class="ios-input" id="vd-pv" type="number" placeholder="65" oninput="updateVPreview()"/></div>';
-  h+='<div><div class="input-label">Custo total (R$) <span style="font-size:11px;color:#AEAEB2;">opcional</span></div><input class="ios-input" id="vd-cust" type="number" placeholder="15" oninput="updateVPreview()"/></div></div>';
+
+  // Filamento avulso (sem estoque)
+  h+='<div id="vd-avulso-box" style="background:#FFF8EE;border:1px solid #FF950040;border-radius:10px;padding:12px 14px;margin-bottom:12px;">';
+  h+='<div style="font-size:13px;font-weight:600;color:#FF9500;margin-bottom:10px;">\ud83e\uddf5 Filamento avulso (para vendas antigas / sem estoque)</div>';
+  h+='<div class="grid-3">';
+  h+='<div><div class="input-label">Qtd. (kg)</div><input class="ios-input" id="vd-av-kg" type="number" step="0.001" placeholder="0.120" inputmode="decimal" oninput="updateVPreview()"/></div>';
+  h+='<div><div class="input-label">Custo/kg (R$)</div><input class="ios-input" id="vd-av-ckg" type="number" step="0.01" placeholder="90" inputmode="decimal" oninput="updateVPreview()"/></div>';
+  h+='<div><div class="input-label">Venda/kg (R$)</div><input class="ios-input" id="vd-av-vkg" type="number" step="0.01" placeholder="180" inputmode="decimal" oninput="updateVPreview()"/></div>';
+  h+='</div></div>';
+
+  // Peso / Tempo / Fator de consumo
+  h+='<div class="grid-2" style="margin-bottom:12px;">';
+  h+='<div><div class="input-label">Peso impresso (g)</div>';
+  h+='<input class="ios-input" id="vd-peso" inputmode="decimal" placeholder="120" oninput="updateVPreview()"/></div>';
+  h+='<div><div class="input-label">Tipo de pe\u00e7a</div>';
+  h+='<select class="ios-input" id="vd-tipo" onchange="updateVPreview()">';
+  h+='<option value="0.36">Pe\u00e7a comum (fator 0,36)</option>';
+  h+='<option value="0.30">Chaveiro pequeno (fator 0,30)</option>';
+  h+='<option value="0.32">Chaveiro m\u00e9dio (fator 0,32)</option>';
+  h+='<option value="0.28">Chaveiro fino (fator 0,28)</option>';
+  h+='<option value="0">Manual (digitar custo)</option>';
+  h+='</select></div></div>';
+
+  h+='<div class="grid-2" style="margin-bottom:12px;">';
+  h+='<div><div class="input-label">Tempo de impress\u00e3o (h)</div>';
+  h+='<input class="ios-input" id="vd-tempo" inputmode="decimal" placeholder="3.5"/></div>';
+  h+='<div><div class="input-label">Custo produ\u00e7\u00e3o (R$) <span style="font-size:10px;color:#AEAEB2;">calc. autom\u00e1tico</span></div>';
+  h+='<input class="ios-input" id="vd-cust" inputmode="decimal" placeholder="calculado" oninput="updateVPreview()" style="color:#FF3B30;font-weight:600;"/></div></div>';
+
+  h+='<div style="margin-bottom:12px;"><div class="input-label">Pre\u00e7o de venda (R$)</div>';
+  h+='<input class="ios-input" id="vd-pv" inputmode="decimal" placeholder="65" oninput="updateVPreview()" style="color:#34C759;font-weight:700;font-size:18px;"/></div>';
+
   h+='<div id="vd-preview"></div>';
+
+  // Pago
   h+='<div style="background:#F2F2F7;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">';
-  h+='<div><div style="font-size:15px;color:#1C1C1E;font-weight:500;">Pagamento recebido</div><div style="font-size:12px;color:#636366;margin-top:2px;">Marque se já recebeu o valor</div></div>';
+  h+='<div><div style="font-size:15px;color:#1C1C1E;font-weight:500;">Pagamento recebido</div><div style="font-size:12px;color:#636366;margin-top:2px;">Marque se j\u00e1 recebeu o valor</div></div>';
   h+='<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">';
   h+='<input type="checkbox" id="vd-pago" style="width:20px;height:20px;accent-color:#34C759;cursor:pointer;"/>';
-  h+='<span style="font-size:14px;font-weight:600;color:#34C759;">✅ Pago</span></label></div>';
-  h+='<div style="display:flex;gap:12px;"><button class="ios-btn ios-btn-outlined" style="color:#636366;border-color:#636366;flex:1;" onclick="forceClose()">Cancelar</button>';
+  h+='<span style="font-size:14px;font-weight:600;color:#34C759;">\u2705 Pago</span></label></div>';
+
+  h+='<div style="display:flex;gap:12px;">';
+  h+='<button class="ios-btn ios-btn-outlined" style="color:#636366;border-color:#636366;flex:1;" onclick="forceClose()">Cancelar</button>';
   h+='<button class="ios-btn" style="background:#34C759;color:#fff;flex:1;" onclick="salvarVenda()">Registrar</button></div></div>';
-  openModal(h);_baixarEst=true;
+  openModal(h);
+  _baixarEst=true;
 }
-function toggleVBaixar(){var r=getEl("vd-baixar-row");if(r)r.style.display=getVal("vd-fil")?"flex":"none";}
-function toggleBaixar(){_baixarEst=!_baixarEst;var t=getEl("tg-baixar");if(t){t.style.background=_baixarEst?"#34C759":"#E5E5EA";t.querySelector(".toggle-knob").style.left=_baixarEst?"22px":"2px";}}
-function updateVPreview(){var pv=+getVal("vd-pv"),cst=+getVal("vd-cust");var el=getEl("vd-preview");if(!el)return;if(pv&&cst){var luc=pv-cst,mg=((luc/pv)*100);el.innerHTML='<div style="background:#34C75915;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;"><span style="color:#34C759;font-weight:600;">Lucro: '+fmtR(luc)+'</span><span style="color:#636366;">Margem: '+fmt(mg,1)+'%</span></div>';}else el.innerHTML="";}
+
+function toggleVBaixar(){
+  var r=getEl("vd-baixar-row");
+  if(r)r.style.display=getVal("vd-fil")?"flex":"none";
+  // hide avulso box if stock filament selected
+  var av=getEl("vd-avulso-box");
+  if(av)av.style.display=getVal("vd-fil")?"none":"block";
+  updateVPreview();
+}
+function toggleBaixar(){
+  _baixarEst=!_baixarEst;
+  var t=getEl("tg-baixar");
+  if(t){t.style.background=_baixarEst?"#34C759":"#E5E5EA";t.querySelector(".toggle-knob").style.left=_baixarEst?"22px":"2px";}
+}
+
+function calcCustoVenda(){
+  // Returns calculated custo based on fator or filamento avulso
+  var filId=+getVal("vd-fil")||0;
+  var pesoG=+getVal("vd-peso")||0;
+  var fator=+getVal("vd-tipo")||0;
+
+  if(filId&&pesoG>0&&fator>0){
+    // Use filamento do estoque * fator
+    var fil=null;
+    for(var i=0;i<STATE.filamentos.length;i++){if(STATE.filamentos[i].id===filId){fil=STATE.filamentos[i];break;}}
+    if(fil)return +(fil.custo_kg*(pesoG/1000)*fator).toFixed(2);
+  }
+  if(!filId&&pesoG>0&&fator>0){
+    // Filamento avulso * fator
+    var custoKg=+getVal("vd-av-ckg")||0;
+    if(custoKg>0)return +(custoKg*(pesoG/1000)*fator).toFixed(2);
+  }
+  return null; // manual
+}
+
+function updateVPreview(){
+  var pv=+getVal("vd-pv")||0;
+  var fator=+getVal("vd-tipo");
+  var pesoG=+getVal("vd-peso")||0;
+
+  // Auto-fill custo if fator selected and not manual
+  if(fator>0&&pesoG>0){
+    var autoCusto=calcCustoVenda();
+    if(autoCusto!==null){
+      var custEl=getEl("vd-cust");
+      if(custEl&&!custEl.dataset.manual){
+        custEl.value=autoCusto;
+        custEl.style.background="#FFF8EE";
+      }
+    }
+  }
+  if(fator===0){
+    var custEl2=getEl("vd-cust");
+    if(custEl2)custEl2.style.background="#fff";
+  }
+
+  var cst=+getVal("vd-cust")||0;
+
+  // Filamento avulso: compute receita estimada from vd-av-vkg
+  var avKg=+getVal("vd-av-kg")||0;
+  var avVkg=+getVal("vd-av-vkg")||0;
+  var avCkg=+getVal("vd-av-ckg")||0;
+  var avReceita=avKg*avVkg;
+  var avCusto=avKg*avCkg;
+
+  var el=getEl("vd-preview");if(!el)return;
+  var h="";
+  if(pv>0&&cst>0){
+    var luc=pv-cst,mg=pv>0?((luc/pv)*100):0;
+    var mgc=mg>50?"#34C759":mg>25?"#FF9500":"#FF3B30";
+    h+='<div style="background:#34C75915;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
+    h+='<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
+    h+='<span style="color:#34C759;font-weight:600;">Lucro: '+fmtR(luc)+'</span>';
+    h+='<span style="color:'+mgc+';font-weight:600;">Margem: '+fmt(mg,1)+'%</span></div>';
+    if(fator>0&&pesoG>0)h+='<div style="font-size:12px;color:#636366;">Custo calculado pelo fator '+fator+' \u00d7 '+pesoG+'g</div>';
+    h+='</div>';
+  }
+  if(avKg>0&&avVkg>0){
+    h+='<div style="background:#007AFF15;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
+    h+='<div style="font-size:13px;color:#007AFF;font-weight:600;">Filamento avulso: '+fmt(avKg,3)+'kg \u00d7 R$'+fmt(avVkg)+'/kg = '+fmtR(avReceita)+'</div>';
+    if(avCkg>0)h+='<div style="font-size:12px;color:#636366;margin-top:2px;">Custo mat\u00e9ria-prima: '+fmtR(avCusto)+'</div>';
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
 function salvarVenda(){
-  var pv=+getVal("vd-pv");if(!pv){showToast("Informe o preço de venda");return;}
+  var pv=+getVal("vd-pv");if(!pv){showToast("Informe o pre\u00e7o de venda");return;}
   var filId=+getVal("vd-fil")||null;
-  var nova={id:Date.now(),data:getVal("vd-data")||today(),filamento_id:filId,descricao:getVal("vd-desc")||"",peso_g:+getVal("vd-peso")||0,tempo_h:+getVal("vd-tempo")||0,preco_venda:pv,custo_impressao:+getVal("vd-cust")||0,comprador:getVal("vd-comp")||"",quantidade:+getVal("vd-qtd")||1,pago:document.getElementById("vd-pago")&&document.getElementById("vd-pago").checked};
+  var pesoG=+getVal("vd-peso")||0;
+  // Custo: field value (may have been auto-filled)
+  var custoFinal=+getVal("vd-cust")||0;
+  // Filamento avulso data
+  var avKg=+getVal("vd-av-kg")||0;
+  var avCkg=+getVal("vd-av-ckg")||0;
+  var nova={
+    id:Date.now(),
+    data:getVal("vd-data")||today(),
+    filamento_id:filId,
+    descricao:getVal("vd-desc")||"",
+    peso_g:pesoG,
+    tempo_h:+getVal("vd-tempo")||0,
+    preco_venda:pv,
+    custo_impressao:custoFinal,
+    comprador:getVal("vd-comp")||"",
+    quantidade:+getVal("vd-qtd")||1,
+    pago:!!(document.getElementById("vd-pago")&&document.getElementById("vd-pago").checked),
+    avulso_kg:avKg,
+    avulso_custo_kg:avCkg
+  };
   var fils=STATE.filamentos.slice();
-  if(filId&&_baixarEst&&nova.peso_g>0){var kg=nova.peso_g/1000;fils=fils.map(function(f){return f.id===filId?Object.assign({},f,{estoque_kg:Math.max(0,f.estoque_kg-kg)}):f;});}
-  commitState({vendas:STATE.vendas.concat([nova]),filamentos:fils});forceClose();showToast("Venda registrada ✓");
+  if(filId&&_baixarEst&&pesoG>0){
+    var kg=pesoG/1000;
+    fils=fils.map(function(f){return f.id===filId?Object.assign({},f,{estoque_kg:Math.max(0,f.estoque_kg-kg)}):f;});
+  }
+  commitState({vendas:STATE.vendas.concat([nova]),filamentos:fils});
+  forceClose();showToast("Venda registrada \u2713");
 }
+
 function excluirVenda(id){if(!confirm("Excluir?"))return;commitState({vendas:STATE.vendas.filter(function(v){return v.id!=id;})});showToast("Removido");}
 
 // Calculadora → Vendas
